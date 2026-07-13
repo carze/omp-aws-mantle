@@ -1,0 +1,57 @@
+{
+  "name": "omp-aws-mantle",
+  "version": "0.1.0",
+  "description": "AWS Bedrock Mantle model provider plugin for Oh My Pi",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://github.com/carze/omp-aws-mantle#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/carze/omp-aws-mantle.git"
+  },
+  "bugs": {
+    "url": "https://github.com/carze/omp-aws-mantle/issues"
+  },
+  "keywords": [
+    "oh-my-pi",
+    "omp",
+    "aws",
+    "amazon-bedrock",
+    "mantle",
+    "llm"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": "./dist/extension.js"
+  },
+  "scripts": {
+    "build": "bun build ./src/extension.ts --outdir ./dist --target bun --format esm --external @oh-my-pi/pi-coding-agent --external @oh-my-pi/pi-ai",
+    "typecheck": "tsgo -p tsconfig.json --noEmit",
+    "test": "bun test",
+    "check": "bun run typecheck && bun test && bun run build",
+    "test:pack": "bun scripts/packed-artifact-smoke.ts",
+    "prepack": "bun run check"
+  },
+  "peerDependencies": {
+    "@oh-my-pi/pi-ai": ">=16.4.1",
+    "@oh-my-pi/pi-coding-agent": ">=16.4.1"
+  },
+  "devDependencies": {
+    "@oh-my-pi/pi-coding-agent": "16.4.1",
+    "@oh-my-pi/pi-ai": "16.4.1",
+    "@oh-my-pi/pi-catalog": "16.4.1",
+    "@types/bun": "latest",
+    "@typescript/native-preview": "7.0.0-dev.20260609.1"
+  },
+  "omp": {
+    "version": "0.1.0",
+    "extensions": [
+      "./dist/extension.js"
+    ]
+  }
+}

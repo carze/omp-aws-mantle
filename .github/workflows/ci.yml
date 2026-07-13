@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      real_aws:
+        description: Run the opt-in real AWS Mantle smoke test
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+      - run: bun run test:pack
+      - run: mkdir -p artifacts && bun pm pack --destination ./artifacts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: omp-aws-mantle-npm-package
+          path: artifacts/*.tgz
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+
+  real-aws:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.real_aws }}
+    runs-on: ubuntu-latest
+    env:
+      AWS_BEARER_TOKEN_BEDROCK: ${{ secrets.AWS_BEARER_TOKEN_BEDROCK }}
+      AWS_MANTLE_REGION: ${{ vars.AWS_MANTLE_REGION }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+      - name: Run real Mantle GPT-5.5 smoke
+        run: |
+          test -n "$AWS_BEARER_TOKEN_BEDROCK"
+          test -n "$AWS_MANTLE_REGION"
+          bun test test/real-aws.smoke.test.ts
