@@ -129,11 +129,15 @@ omp models aws-mantle-openai
 omp models aws-mantle-anthropic
 ```
 
-Start GPT-5.5:
+Start a GPT-5.6 model:
 
 ```sh
-omp --model aws-mantle-openai/openai.gpt-5.5
+omp --model aws-mantle-openai/openai.gpt-5.6-terra
+omp --model aws-mantle-openai/openai.gpt-5.6-sol
+omp --model aws-mantle-openai/openai.gpt-5.6-luna
 ```
+
+Terra is the balanced option, Sol is the highest-capability option, and Luna is the fast, lower-cost option. AWS currently offers Terra and Luna in `us-east-1`, `us-east-2`, and `us-west-2`; Sol is available in `us-east-1` and `us-east-2`. Discovery only exposes models available to the configured account and region.
 
 ## Providers
 
@@ -160,7 +164,7 @@ Base URL:
 https://bedrock-mantle.<region>.api.aws/openai/v1
 ```
 
-GPT-5.4 and GPT-5.5 use this dedicated OpenAI Responses endpoint. AWS serves these models from `/openai/v1/responses`, not the `/v1/responses` path used by GPT OSS. OMP sends `store: false`, so Mantle does not retain Responses state for the request.
+GPT-5.4, GPT-5.5, and GPT-5.6 use this dedicated OpenAI Responses endpoint. AWS serves these models from `/openai/v1/responses`, not the `/v1/responses` path used by GPT OSS. OMP sends `store: false`, so Mantle does not retain Responses state for the request.
 
 ### `aws-mantle-anthropic`
 
@@ -181,7 +185,7 @@ Mantle's Models API reports availability but does not provide all metadata OMP n
 
 Unknown IDs are omitted and reported once. They are not assigned invented context limits, prices, modalities, or reasoning behavior.
 
-`openai.gpt-5.4` and `openai.gpt-5.5` are partitioned into `aws-mantle-openai` because their AWS model cards declare the model-specific `/openai/v1` base path. All three providers share the same authenticated `/v1/models` discovery request.
+`openai.gpt-5.4`, `openai.gpt-5.5`, and the `openai.gpt-5.6-{luna,sol,terra}` models are partitioned into `aws-mantle-openai` because their AWS model cards declare the model-specific `/openai/v1` base path. All three providers share the same authenticated `/v1/models` discovery request.
 
 To add a model:
 

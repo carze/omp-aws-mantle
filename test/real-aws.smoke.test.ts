@@ -11,16 +11,16 @@ const hasRegion = Boolean(
   process.env.AWS_MANTLE_REGION || process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION,
 );
 
-test.skipIf(!apiKey || !hasRegion)("lists and streams GPT-5.5 through its dedicated endpoint", async () => {
+test.skipIf(!apiKey || !hasRegion)("lists and streams GPT-5.6 Terra through its dedicated endpoint", async () => {
   if (!apiKey) throw new Error("AWS_BEARER_TOKEN_BEDROCK is required");
   const config = resolveMantleConfig();
   const discovered = await discoverMantleModels({ baseUrl: config.compatBaseUrl, apiKey });
   expect(discovered.length).toBeGreaterThan(0);
 
-  const selected = selectOpenAIResponsesModels(discovered).find(model => model.id === "openai.gpt-5.5");
+  const selected = selectOpenAIResponsesModels(discovered).find(model => model.id === "openai.gpt-5.6-terra");
   expect(selected).toBeDefined();
-  if (!selected) throw new Error("AWS Mantle did not advertise openai.gpt-5.5");
-  if (selected.api !== "openai-responses") throw new Error("GPT-5.5 must use OpenAI Responses");
+  if (!selected) throw new Error("AWS Mantle did not advertise openai.gpt-5.6-terra");
+  if (selected.api !== "openai-responses") throw new Error("GPT-5.6 Terra must use OpenAI Responses");
   const model = buildModel({
     id: selected.id,
     name: selected.name,

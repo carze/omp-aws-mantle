@@ -31,6 +31,9 @@ describe("AWS Mantle extension", () => {
           data: [
             { id: "openai.gpt-oss-120b", object: "model" },
             { id: "openai.gpt-5.5", object: "model" },
+            { id: "openai.gpt-5.6-luna", object: "model" },
+            { id: "openai.gpt-5.6-sol", object: "model" },
+            { id: "openai.gpt-5.6-terra", object: "model" },
             { id: "qwen.qwen3-coder-next", object: "model" },
             { id: "anthropic.claude-sonnet-5", object: "model" },
             { id: "brand-new-model", object: "model" },
@@ -66,6 +69,9 @@ describe("AWS Mantle extension", () => {
     ]);
     expect(openAIModels?.map(model => [model.id, model.api])).toEqual([
       ["openai.gpt-5.5", "openai-responses"],
+      ["openai.gpt-5.6-luna", "openai-responses"],
+      ["openai.gpt-5.6-sol", "openai-responses"],
+      ["openai.gpt-5.6-terra", "openai-responses"],
     ]);
     expect(anthropicModels?.map(model => [model.id, model.api])).toEqual([
       ["anthropic.claude-sonnet-5", "anthropic-messages"],

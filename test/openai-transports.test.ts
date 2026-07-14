@@ -29,6 +29,18 @@ const chatModel = buildModel({
   contextWindow: 131_072,
   maxTokens: 65_536,
 }) as Model<"openai-completions">;
+const gpt56Model = buildModel({
+  id: "openai.gpt-5.6-terra",
+  name: "GPT-5.6 Terra",
+  provider: "aws-mantle-openai",
+  api: "openai-responses",
+  baseUrl: "https://bedrock-mantle.us-east-1.api.aws/openai/v1",
+  reasoning: true,
+  input: ["text", "image"],
+  cost: { input: 2.75, output: 16.5, cacheRead: 0.28, cacheWrite: 3.44 },
+  contextWindow: 272_000,
+  maxTokens: 128_000,
+}) as Model<"openai-responses">;
 const context: Context = {
   messages: [{ role: "user", content: "Help", timestamp: 1 }],
 };
@@ -68,6 +80,31 @@ describe("Mantle OpenAI transport contracts", () => {
     expect(body.stream).toBe(true);
     expect(result.content).toEqual([expect.objectContaining({ type: "text", text: "Mantle response" })]);
     expect(result.usage).toEqual(expect.objectContaining({ input: 5, cacheRead: 1, output: 2 }));
+  });
+
+  test("GPT-5.6 uses the dedicated OpenAI endpoint and max reasoning tier", async () => {
+    let request: Request | undefined;
+    const fetchMock: FetchImpl = async (input, init) => {
+      request = input instanceof Request && init === undefined ? input : new Request(input, init);
+      return sse([
+        { type: "response.output_item.added", item: { type: "message", id: "msg_56", role: "assistant", status: "in_progress", content: [] } },
+        { type: "response.content_part.added", item_id: "msg_56", part: { type: "output_text", text: "" } },
+        { type: "response.output_text.delta", item_id: "msg_56", delta: "OK" },
+        { type: "response.output_item.done", item: { type: "message", id: "msg_56", role: "assistant", status: "completed", content: [{ type: "output_text", text: "OK" }] } },
+        { type: "response.completed", response: { id: "resp_56", status: "completed", usage: { input_tokens: 1, output_tokens: 1, total_tokens: 2 } } },
+      ]);
+    };
+
+    const result = await streamOpenAIResponses(gpt56Model, context, {
+      apiKey: "mantle-key",
+      fetch: fetchMock,
+      reasoning: "max",
+    }).result();
+    const body = await request?.clone().json() as Record<string, unknown>;
+
+    expect(request?.url).toBe("https://bedrock-mantle.us-east-1.api.aws/openai/v1/responses");
+    expect(body.reasoning).toEqual({ effort: "max", summary: "auto" });
+    expect(result.content).toEqual([expect.objectContaining({ type: "text", text: "OK" })]);
   });
 
   test("Chat Completions heals fragmented tool arguments", async () => {

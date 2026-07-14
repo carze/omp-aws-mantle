@@ -127,6 +127,18 @@ export const MANTLE_OPENAI_RESPONSES_MODELS = {
     id: "openai.gpt-5.5", name: "GPT-5.5 (AWS Mantle)", api: "openai-responses", reasoning: true,
     input: ["text", "image"], cost: { input: 5.5, output: 33, cacheRead: 0.55, cacheWrite: 0 }, contextWindow: 272_000, maxTokens: 128_000,
   },
+  "openai.gpt-5.6-luna": {
+    id: "openai.gpt-5.6-luna", name: "GPT-5.6 Luna (AWS Mantle)", api: "openai-responses", reasoning: true,
+    input: ["text", "image"], cost: { input: 1.1, output: 6.6, cacheRead: 0.11, cacheWrite: 1.38 }, contextWindow: 272_000, maxTokens: 128_000,
+  },
+  "openai.gpt-5.6-sol": {
+    id: "openai.gpt-5.6-sol", name: "GPT-5.6 Sol (AWS Mantle)", api: "openai-responses", reasoning: true,
+    input: ["text", "image"], cost: { input: 5.5, output: 33, cacheRead: 0.55, cacheWrite: 6.88 }, contextWindow: 272_000, maxTokens: 128_000,
+  },
+  "openai.gpt-5.6-terra": {
+    id: "openai.gpt-5.6-terra", name: "GPT-5.6 Terra (AWS Mantle)", api: "openai-responses", reasoning: true,
+    input: ["text", "image"], cost: { input: 2.75, output: 16.5, cacheRead: 0.28, cacheWrite: 3.44 }, contextWindow: 272_000, maxTokens: 128_000,
+  },
 } as const satisfies Record<string, ProviderModelConfig>;
 
 export interface SelectedMantleModels {
