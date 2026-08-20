@@ -479,12 +479,26 @@ var MANTLE_OPENAI_MODELS = {
     maxTokens: 262000
   }
 };
+var MANTLE_GPT_5_X_THINKING = {
+  mode: "effort",
+  efforts: ["low", "medium", "high", "xhigh"]
+};
+var MANTLE_GPT_5_6_THINKING = {
+  mode: "effort",
+  efforts: ["low", "medium", "high", "xhigh", "max"]
+};
+var MANTLE_GROK_4_6_THINKING = {
+  mode: "effort",
+  efforts: ["low", "medium", "high", "xhigh"],
+  defaultLevel: "low"
+};
 var MANTLE_OPENAI_RESPONSES_MODELS = {
   "openai.gpt-5.4": {
     id: "openai.gpt-5.4",
     name: "GPT-5.4 (AWS Mantle)",
     api: "openai-responses",
     reasoning: true,
+    thinking: MANTLE_GPT_5_X_THINKING,
     input: ["text", "image"],
     cost: { input: 2.75, output: 16.5, cacheRead: 0.275, cacheWrite: 0 },
     contextWindow: 272000,
@@ -495,6 +509,7 @@ var MANTLE_OPENAI_RESPONSES_MODELS = {
     name: "GPT-5.5 (AWS Mantle)",
     api: "openai-responses",
     reasoning: true,
+    thinking: MANTLE_GPT_5_X_THINKING,
     input: ["text", "image"],
     cost: { input: 5.5, output: 33, cacheRead: 0.55, cacheWrite: 0 },
     contextWindow: 272000,
@@ -505,8 +520,9 @@ var MANTLE_OPENAI_RESPONSES_MODELS = {
     name: "GPT-5.6 Luna (AWS Mantle)",
     api: "openai-responses",
     reasoning: true,
+    thinking: MANTLE_GPT_5_6_THINKING,
     input: ["text", "image"],
-    cost: { input: 1.1, output: 6.6, cacheRead: 0.11, cacheWrite: 1.38 },
+    cost: { input: 0.22, output: 1.32, cacheRead: 0.022, cacheWrite: 0.275 },
     contextWindow: 272000,
     maxTokens: 128000
   },
@@ -515,6 +531,7 @@ var MANTLE_OPENAI_RESPONSES_MODELS = {
     name: "GPT-5.6 Sol (AWS Mantle)",
     api: "openai-responses",
     reasoning: true,
+    thinking: MANTLE_GPT_5_6_THINKING,
     input: ["text", "image"],
     cost: { input: 5.5, output: 33, cacheRead: 0.55, cacheWrite: 6.88 },
     contextWindow: 272000,
@@ -525,10 +542,23 @@ var MANTLE_OPENAI_RESPONSES_MODELS = {
     name: "GPT-5.6 Terra (AWS Mantle)",
     api: "openai-responses",
     reasoning: true,
+    thinking: MANTLE_GPT_5_6_THINKING,
     input: ["text", "image"],
-    cost: { input: 2.75, output: 16.5, cacheRead: 0.28, cacheWrite: 3.44 },
+    cost: { input: 2.2, output: 13.2, cacheRead: 0.22, cacheWrite: 2.75 },
     contextWindow: 272000,
     maxTokens: 128000
+  },
+  "xai.grok-4.6": {
+    id: "xai.grok-4.6",
+    name: "Grok 4.6 (AWS Mantle)",
+    api: "openai-responses",
+    reasoning: true,
+    thinking: MANTLE_GROK_4_6_THINKING,
+    input: ["text", "image"],
+    cost: { input: 2.2, output: 6.6, cacheRead: 0.55, cacheWrite: 0 },
+    contextWindow: 500000,
+    maxTokens: 500000,
+    compat: { supportsReasoningEffort: true, supportsStrictMode: true, includeEncryptedReasoning: true }
   }
 };
 function selectOpenAIResponsesModels(discovered) {

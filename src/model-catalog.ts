@@ -1,3 +1,4 @@
+import type { Effort, ThinkingConfig } from "@oh-my-pi/pi-ai";
 import type { ProviderModelConfig } from "@oh-my-pi/pi-coding-agent";
 
 /**
@@ -5,7 +6,7 @@ import type { ProviderModelConfig } from "@oh-my-pi/pi-coding-agent";
  * Amazon Bedrock model cards and API compatibility matrix:
  * https://docs.aws.amazon.com/bedrock/latest/userguide/models-api-compatibility.html
  * https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards.html
- * Costs are USD per million tokens and match the OMP 16.4.1 Bedrock catalog.
+ * Costs are USD per million tokens. The GPT-5.4 through GPT-5.6 entries match OMP 17.4.0's native Bedrock Mantle catalog.
  */
 export const MANTLE_OPENAI_MODELS = {
   "deepseek.v3.1": {
@@ -118,26 +119,53 @@ export const MANTLE_OPENAI_MODELS = {
   },
 } as const satisfies Record<string, ProviderModelConfig>;
 
+const MANTLE_GPT_5_X_THINKING: ThinkingConfig = {
+  mode: "effort",
+  efforts: ["low", "medium", "high", "xhigh"] as Effort[],
+};
+
+const MANTLE_GPT_5_6_THINKING: ThinkingConfig = {
+  mode: "effort",
+  efforts: ["low", "medium", "high", "xhigh", "max"] as Effort[],
+};
+
+const MANTLE_GROK_4_6_THINKING: ThinkingConfig = {
+  mode: "effort",
+  efforts: ["low", "medium", "high", "xhigh"] as Effort[],
+  defaultLevel: "low" as Effort,
+};
+
 export const MANTLE_OPENAI_RESPONSES_MODELS = {
   "openai.gpt-5.4": {
     id: "openai.gpt-5.4", name: "GPT-5.4 (AWS Mantle)", api: "openai-responses", reasoning: true,
+    thinking: MANTLE_GPT_5_X_THINKING,
     input: ["text", "image"], cost: { input: 2.75, output: 16.5, cacheRead: 0.275, cacheWrite: 0 }, contextWindow: 272_000, maxTokens: 128_000,
   },
   "openai.gpt-5.5": {
     id: "openai.gpt-5.5", name: "GPT-5.5 (AWS Mantle)", api: "openai-responses", reasoning: true,
+    thinking: MANTLE_GPT_5_X_THINKING,
     input: ["text", "image"], cost: { input: 5.5, output: 33, cacheRead: 0.55, cacheWrite: 0 }, contextWindow: 272_000, maxTokens: 128_000,
   },
   "openai.gpt-5.6-luna": {
     id: "openai.gpt-5.6-luna", name: "GPT-5.6 Luna (AWS Mantle)", api: "openai-responses", reasoning: true,
-    input: ["text", "image"], cost: { input: 1.1, output: 6.6, cacheRead: 0.11, cacheWrite: 1.38 }, contextWindow: 272_000, maxTokens: 128_000,
+    thinking: MANTLE_GPT_5_6_THINKING,
+    input: ["text", "image"], cost: { input: 0.22, output: 1.32, cacheRead: 0.022, cacheWrite: 0.275 }, contextWindow: 272_000, maxTokens: 128_000,
   },
   "openai.gpt-5.6-sol": {
     id: "openai.gpt-5.6-sol", name: "GPT-5.6 Sol (AWS Mantle)", api: "openai-responses", reasoning: true,
+    thinking: MANTLE_GPT_5_6_THINKING,
     input: ["text", "image"], cost: { input: 5.5, output: 33, cacheRead: 0.55, cacheWrite: 6.88 }, contextWindow: 272_000, maxTokens: 128_000,
   },
   "openai.gpt-5.6-terra": {
     id: "openai.gpt-5.6-terra", name: "GPT-5.6 Terra (AWS Mantle)", api: "openai-responses", reasoning: true,
-    input: ["text", "image"], cost: { input: 2.75, output: 16.5, cacheRead: 0.28, cacheWrite: 3.44 }, contextWindow: 272_000, maxTokens: 128_000,
+    thinking: MANTLE_GPT_5_6_THINKING,
+    input: ["text", "image"], cost: { input: 2.2, output: 13.2, cacheRead: 0.22, cacheWrite: 2.75 }, contextWindow: 272_000, maxTokens: 128_000,
+  },
+  "xai.grok-4.6": {
+    id: "xai.grok-4.6", name: "Grok 4.6 (AWS Mantle)", api: "openai-responses", reasoning: true,
+    thinking: MANTLE_GROK_4_6_THINKING,
+    input: ["text", "image"], cost: { input: 2.2, output: 6.6, cacheRead: 0.55, cacheWrite: 0 }, contextWindow: 500_000, maxTokens: 500_000,
+    compat: { supportsReasoningEffort: true, supportsStrictMode: true, includeEncryptedReasoning: true },
   },
 } as const satisfies Record<string, ProviderModelConfig>;
 

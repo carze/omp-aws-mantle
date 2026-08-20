@@ -118,7 +118,7 @@ const server = Bun.serve({
     const url = new URL(request.url);
     if (url.pathname === "/v1/models") {
       discoveryAuthorization = request.headers.get("authorization");
-      return Response.json({ data: [{ id: "openai.gpt-5.6-terra" }, { id: "qwen.qwen3-coder-next" }] });
+      return Response.json({ data: [{ id: "openai.gpt-5.6-terra" }, { id: "xai.grok-4.6" }, { id: "qwen.qwen3-coder-next" }] });
     }
     if (url.pathname === "/v1/chat/completions") {
       inferenceAuthorization = request.headers.get("authorization");
@@ -175,6 +175,10 @@ try {
   assert(
     openAIModels.some(model => model.id === "openai.gpt-5.6-terra" && model.api === "openai-responses"),
     "Packed extension did not route GPT-5.6 Terra through dedicated OpenAI Responses",
+  );
+  assert(
+    openAIModels.some(model => model.id === "xai.grok-4.6" && model.api === "openai-responses"),
+    "Packed extension did not route Grok 4.6 through dedicated OpenAI Responses",
   );
   const model = buildModel({
     id: selected.id,

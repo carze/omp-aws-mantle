@@ -3,6 +3,7 @@ import { streamOpenAICompletions } from "@oh-my-pi/pi-ai/providers/openai-comple
 import { streamOpenAIResponses } from "@oh-my-pi/pi-ai/providers/openai-responses";
 import type { Context, FetchImpl, Model } from "@oh-my-pi/pi-ai/types";
 import { buildModel } from "@oh-my-pi/pi-catalog/build";
+import { MANTLE_OPENAI_RESPONSES_MODELS } from "../src/model-catalog";
 
 const baseUrl = "https://bedrock-mantle.us-east-1.api.aws/v1";
 const responsesModel = buildModel({
@@ -30,16 +31,14 @@ const chatModel = buildModel({
   maxTokens: 65_536,
 }) as Model<"openai-completions">;
 const gpt56Model = buildModel({
-  id: "openai.gpt-5.6-terra",
-  name: "GPT-5.6 Terra",
+  ...MANTLE_OPENAI_RESPONSES_MODELS["openai.gpt-5.6-terra"],
   provider: "aws-mantle-openai",
-  api: "openai-responses",
   baseUrl: "https://bedrock-mantle.us-east-1.api.aws/openai/v1",
-  reasoning: true,
-  input: ["text", "image"],
-  cost: { input: 2.75, output: 16.5, cacheRead: 0.28, cacheWrite: 3.44 },
-  contextWindow: 272_000,
-  maxTokens: 128_000,
+}) as Model<"openai-responses">;
+const grok46Model = buildModel({
+  ...MANTLE_OPENAI_RESPONSES_MODELS["xai.grok-4.6"],
+  provider: "aws-mantle-openai",
+  baseUrl: "https://bedrock-mantle.us-west-2.api.aws/openai/v1",
 }) as Model<"openai-responses">;
 const context: Context = {
   messages: [{ role: "user", content: "Help", timestamp: 1 }],
@@ -105,6 +104,34 @@ describe("Mantle OpenAI transport contracts", () => {
     expect(request?.url).toBe("https://bedrock-mantle.us-east-1.api.aws/openai/v1/responses");
     expect(body.reasoning).toEqual({ effort: "max", summary: "auto" });
     expect(result.content).toEqual([expect.objectContaining({ type: "text", text: "OK" })]);
+  });
+
+  test("Grok 4.6 uses the Mantle Responses endpoint and encrypted reasoning", async () => {
+    let request: Request | undefined;
+    const fetchMock: FetchImpl = async (input, init) => {
+      request = input instanceof Request && init === undefined ? input : new Request(input, init);
+      return sse([
+        { type: "response.output_item.added", item: { type: "message", id: "msg_grok", role: "assistant", status: "in_progress", content: [] } },
+        { type: "response.content_part.added", item_id: "msg_grok", part: { type: "output_text", text: "" } },
+        { type: "response.output_text.delta", item_id: "msg_grok", delta: "Grok response" },
+        { type: "response.output_item.done", item: { type: "message", id: "msg_grok", role: "assistant", status: "completed", content: [{ type: "output_text", text: "Grok response" }] } },
+        { type: "response.completed", response: { id: "resp_grok", status: "completed", usage: { input_tokens: 3, output_tokens: 2, total_tokens: 5 } } },
+      ]);
+    };
+
+    const result = await streamOpenAIResponses(grok46Model, context, {
+      apiKey: "mantle-key",
+      fetch: fetchMock,
+      reasoning: "xhigh",
+    }).result();
+    const body = await request?.clone().json() as Record<string, unknown>;
+
+    expect(request?.url).toBe("https://bedrock-mantle.us-west-2.api.aws/openai/v1/responses");
+    expect(request?.headers.get("authorization")).toBe("Bearer mantle-key");
+    expect(body.model).toBe("xai.grok-4.6");
+    expect(body.include).toEqual(["reasoning.encrypted_content"]);
+    expect(body.reasoning).toEqual(expect.objectContaining({ effort: "xhigh" }));
+    expect(result.content).toEqual([expect.objectContaining({ type: "text", text: "Grok response" })]);
   });
 
   test("Chat Completions heals fragmented tool arguments", async () => {
