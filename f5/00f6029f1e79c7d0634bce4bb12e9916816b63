@@ -1,0 +1,24 @@
+dist/extension.js
+  h_620afb38050b2a 482-494,501,512,523,525,534,545,547,550-561
+scripts/packed-artifact-smoke.ts
+  h_620afb38050b2a 121,179-182
+src/model-catalog.ts
+  h_620afb38050b2a 1,9,122-137,141,146,151-152,156,161-168
+test/extension.test.ts
+  h_620afb38050b2a 37,76
+test/model-catalog.test.ts
+  h_620afb38050b2a 23,32,41,46-47,59-62,64-82
+test/openai-transports.test.ts
+  h_620afb38050b2a 6,34,37-41,109-136
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "f500f6029f1e79c7d0634bce4bb12e9916816b63",
+  "prompts": {},
+  "humans": {
+    "h_620afb38050b2a": {
+      "author": "Cesar Arze <cesar.arze@gmail.com>"
+    }
+  }
+}
