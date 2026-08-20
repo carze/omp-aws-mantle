@@ -1,0 +1,16 @@
+bun.lock
+  h_620afb38050b2a 8-10,99,101,103,105,107,109,111,113,115,117,119,121,123,125,127,129,131,133,137,141,143,145,147-153,157,159,357,387,389,391,393,395,397
+package.json
+  h_620afb38050b2a 45-47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "a5e953027f74cdce78b6118450b2d496d090a976",
+  "prompts": {},
+  "humans": {
+    "h_620afb38050b2a": {
+      "author": "Cesar Arze <cesar.arze@gmail.com>"
+    }
+  }
+}
