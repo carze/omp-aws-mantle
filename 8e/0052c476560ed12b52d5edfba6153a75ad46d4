@@ -1,0 +1,16 @@
+CHANGELOG.md
+  h_620afb38050b2a 8,13
+README.md
+  h_620afb38050b2a 132,135,141,168,189
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "8e0052c476560ed12b52d5edfba6153a75ad46d4",
+  "prompts": {},
+  "humans": {
+    "h_620afb38050b2a": {
+      "author": "Cesar Arze <cesar.arze@gmail.com>"
+    }
+  }
+}
