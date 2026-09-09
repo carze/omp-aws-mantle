@@ -26,6 +26,7 @@ describe("discoverMantleModels", () => {
     expect(request?.url).toBe("https://bedrock-mantle.us-east-1.api.aws/v1/models");
     expect(request?.method).toBe("GET");
     expect(request?.headers.get("authorization")).toBe("Bearer secret-key");
+    expect(request?.headers.get("content-type")).toBe("application/json");
     expect(models).toEqual([
       { id: "a-model", object: "model", created: 1, ownedBy: "aws" },
       { id: "z-model", object: "model", created: 2, ownedBy: "aws" },

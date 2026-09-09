@@ -213,6 +213,7 @@ async function discoverMantleModels(options) {
     method: "GET",
     headers: {
       Accept: "application/json",
+      "Content-Type": "application/json",
       ...apiKey ? { Authorization: `Bearer ${apiKey}` } : {}
     },
     ...options.signal ? { signal: options.signal } : {}

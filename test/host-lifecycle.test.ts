@@ -57,12 +57,14 @@ describe("AWS Mantle host lifecycle", () => {
   test("uses the host 24-hour cache and removes models with their extension source", async () => {
     let discoveryRequests = 0;
     let discoveryAuthorization: string | null = null;
+    let discoveryRequestContentType: string | null = null;
     const { pi, registrations } = registrationHarness();
     await createAwsMantleExtension({
       environment: { AWS_MANTLE_REGION: "us-east-1" },
       fetch: async (input, init) => {
         const request = input instanceof Request && init === undefined ? input : new Request(input, init);
         discoveryAuthorization = request.headers.get("authorization");
+        discoveryRequestContentType = request.headers.get("content-type");
         discoveryRequests += 1;
         return Response.json({
           data: [
@@ -87,6 +89,7 @@ describe("AWS Mantle host lifecycle", () => {
     expect(discoveryAuthorization ?? "").toMatch(
       /Credential=AKIDHOST\/\d{8}\/us-east-1\/bedrock-mantle\/aws4_request/,
     );
+    expect(String(discoveryRequestContentType)).toBe("application/json");
 
     await registry.refreshRuntimeProviders("online-if-uncached");
     expect(discoveryRequests).toBe(1);

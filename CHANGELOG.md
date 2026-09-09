@@ -15,6 +15,7 @@
 - Routed GPT-5.4 and GPT-5.5 through a dedicated `aws-mantle-openai` provider using their required `/openai/v1` base path instead of the generic `/v1` endpoint.
 - Updated GPT-5.6 Mantle pricing and reasoning metadata to match OMP 17.4.0's native `bedrock-mantle` catalog.
 - Made Anthropic Messages authentication mode-aware so bearer requests send `X-Api-Key` while SigV4 requests do not leak a placeholder API-key header.
+- Added the explicit JSON content type required for Mantle to validate SigV4 model-discovery signatures.
 
 ## 0.1.0 - 2026-07-10
 
