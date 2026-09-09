@@ -28,7 +28,7 @@ omp plugin install github:carze/omp-aws-mantle
 Pin a tagged release when one is available:
 
 ```sh
-omp plugin install github:carze/omp-aws-mantle#v0.1.0
+omp plugin install github:carze/omp-aws-mantle#v0.1.1
 ```
 
 From this checkout:
