@@ -4,6 +4,7 @@
 
 ### Added
 
+- Added GPT-6 Astra through the dedicated `aws-mantle-openai` Responses endpoint with its full 1,050,000-token context window, AWS pricing, image input, and five-tier reasoning support.
 - Added GPT-5.6 Luna, Sol, and Terra through the dedicated `aws-mantle-openai` Responses endpoint, including AWS pricing and five-tier reasoning support.
 - Added xAI Grok 4.6 through the dedicated `aws-mantle-openai` Responses endpoint with 500K context, low/medium/high/xhigh reasoning, image input, encrypted reasoning replay, and structured tool schemas.
 

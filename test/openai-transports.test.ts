@@ -40,6 +40,11 @@ const grok46Model = buildModel({
   provider: "aws-mantle-openai",
   baseUrl: "https://bedrock-mantle.us-west-2.api.aws/openai/v1",
 }) as Model<"openai-responses">;
+const astraModel = buildModel({
+  ...MANTLE_OPENAI_RESPONSES_MODELS["openai.gpt-6-astra"],
+  provider: "aws-mantle-openai",
+  baseUrl: "https://bedrock-mantle.us-west-2.api.aws/openai/v1",
+}) as Model<"openai-responses">;
 const context: Context = {
   messages: [{ role: "user", content: "Help", timestamp: 1 }],
 };
@@ -103,6 +108,33 @@ describe("Mantle OpenAI transport contracts", () => {
 
     expect(request?.url).toBe("https://bedrock-mantle.us-east-1.api.aws/openai/v1/responses");
     expect(body.reasoning).toEqual({ effort: "max", summary: "auto" });
+    expect(result.content).toEqual([expect.objectContaining({ type: "text", text: "OK" })]);
+  });
+
+  test("GPT-6 Astra uses the dedicated OpenAI endpoint and xhigh reasoning tier", async () => {
+    expect(astraModel.thinking?.efforts.map(String)).toEqual(["low", "medium", "high", "xhigh", "max"]);
+    let request: Request | undefined;
+    const fetchMock: FetchImpl = async (input, init) => {
+      request = input instanceof Request && init === undefined ? input : new Request(input, init);
+      return sse([
+        { type: "response.output_item.added", item: { type: "message", id: "msg_astra", role: "assistant", status: "in_progress", content: [] } },
+        { type: "response.content_part.added", item_id: "msg_astra", part: { type: "output_text", text: "" } },
+        { type: "response.output_text.delta", item_id: "msg_astra", delta: "OK" },
+        { type: "response.output_item.done", item: { type: "message", id: "msg_astra", role: "assistant", status: "completed", content: [{ type: "output_text", text: "OK" }] } },
+        { type: "response.completed", response: { id: "resp_astra", status: "completed", usage: { input_tokens: 1, output_tokens: 1, total_tokens: 2 } } },
+      ]);
+    };
+
+    const result = await streamOpenAIResponses(astraModel, context, {
+      apiKey: "mantle-key",
+      fetch: fetchMock,
+      reasoning: "xhigh",
+    }).result();
+    const body = await request?.clone().json() as Record<string, unknown>;
+
+    expect(request?.url).toBe("https://bedrock-mantle.us-west-2.api.aws/openai/v1/responses");
+    expect(body.model).toBe("openai.gpt-6-astra");
+    expect(body.reasoning).toEqual({ effort: "xhigh", summary: "auto" });
     expect(result.content).toEqual([expect.objectContaining({ type: "text", text: "OK" })]);
   });
 

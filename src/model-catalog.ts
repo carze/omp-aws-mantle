@@ -124,7 +124,7 @@ const MANTLE_GPT_5_X_THINKING: ThinkingConfig = {
   efforts: ["low", "medium", "high", "xhigh"] as Effort[],
 };
 
-const MANTLE_GPT_5_6_THINKING: ThinkingConfig = {
+const MANTLE_GPT_5_6_PLUS_THINKING: ThinkingConfig = {
   mode: "effort",
   efforts: ["low", "medium", "high", "xhigh", "max"] as Effort[],
 };
@@ -148,17 +148,17 @@ export const MANTLE_OPENAI_RESPONSES_MODELS = {
   },
   "openai.gpt-5.6-luna": {
     id: "openai.gpt-5.6-luna", name: "GPT-5.6 Luna (AWS Mantle)", api: "openai-responses", reasoning: true,
-    thinking: MANTLE_GPT_5_6_THINKING,
+    thinking: MANTLE_GPT_5_6_PLUS_THINKING,
     input: ["text", "image"], cost: { input: 0.22, output: 1.32, cacheRead: 0.022, cacheWrite: 0.275 }, contextWindow: 272_000, maxTokens: 128_000,
   },
   "openai.gpt-5.6-sol": {
     id: "openai.gpt-5.6-sol", name: "GPT-5.6 Sol (AWS Mantle)", api: "openai-responses", reasoning: true,
-    thinking: MANTLE_GPT_5_6_THINKING,
+    thinking: MANTLE_GPT_5_6_PLUS_THINKING,
     input: ["text", "image"], cost: { input: 5.5, output: 33, cacheRead: 0.55, cacheWrite: 6.88 }, contextWindow: 272_000, maxTokens: 128_000,
   },
   "openai.gpt-5.6-terra": {
     id: "openai.gpt-5.6-terra", name: "GPT-5.6 Terra (AWS Mantle)", api: "openai-responses", reasoning: true,
-    thinking: MANTLE_GPT_5_6_THINKING,
+    thinking: MANTLE_GPT_5_6_PLUS_THINKING,
     input: ["text", "image"], cost: { input: 2.2, output: 13.2, cacheRead: 0.22, cacheWrite: 2.75 }, contextWindow: 272_000, maxTokens: 128_000,
   },
   "xai.grok-4.6": {
@@ -166,6 +166,11 @@ export const MANTLE_OPENAI_RESPONSES_MODELS = {
     thinking: MANTLE_GROK_4_6_THINKING,
     input: ["text", "image"], cost: { input: 2.2, output: 6.6, cacheRead: 0.55, cacheWrite: 0 }, contextWindow: 500_000, maxTokens: 500_000,
     compat: { supportsReasoningEffort: true, supportsStrictMode: true, includeEncryptedReasoning: true },
+  },
+  "openai.gpt-6-astra": {
+    id: "openai.gpt-6-astra", name: "GPT-6 Astra (AWS Mantle)", api: "openai-responses", reasoning: true,
+    thinking: MANTLE_GPT_5_6_PLUS_THINKING,
+    input: ["text", "image"], cost: { input: 11, output: 55, cacheRead: 1.1, cacheWrite: 13.75 }, contextWindow: 1_050_000, maxTokens: 128_000,
   },
 } as const satisfies Record<string, ProviderModelConfig>;
 

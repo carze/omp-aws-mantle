@@ -28,6 +28,7 @@ describe("Mantle OpenAI model catalog", () => {
       { id: "openai.gpt-5.4" },
       { id: "openai.gpt-5.6-sol" },
       { id: "openai.gpt-5.5" },
+      { id: "openai.gpt-6-astra" },
       { id: "openai.gpt-oss-20b" },
       { id: "xai.grok-4.6" },
     ]);
@@ -38,6 +39,7 @@ describe("Mantle OpenAI model catalog", () => {
       ["openai.gpt-5.6-luna", "openai-responses"],
       ["openai.gpt-5.6-sol", "openai-responses"],
       ["openai.gpt-5.6-terra", "openai-responses"],
+      ["openai.gpt-6-astra", "openai-responses"],
       ["xai.grok-4.6", "openai-responses"],
     ]);
     expect(MANTLE_OPENAI_RESPONSES_MODELS["openai.gpt-5.6-luna"]).toEqual(
@@ -78,6 +80,15 @@ describe("Mantle OpenAI model catalog", () => {
           includeEncryptedReasoning: true,
           supportsStrictMode: true,
         }),
+      }),
+    );
+    expect(MANTLE_OPENAI_RESPONSES_MODELS["openai.gpt-6-astra"]).toEqual(
+      expect.objectContaining({
+        thinking: { mode: "effort", efforts: ["low", "medium", "high", "xhigh", "max"] },
+        input: ["text", "image"],
+        cost: { input: 11, output: 55, cacheRead: 1.1, cacheWrite: 13.75 },
+        contextWindow: 1_050_000,
+        maxTokens: 128_000,
       }),
     );
   });

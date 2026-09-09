@@ -129,6 +129,14 @@ omp models aws-mantle-openai
 omp models aws-mantle-anthropic
 ```
 
+Start GPT-6 Astra (AWS currently exposes its Mantle endpoint only in `us-west-2`):
+
+```sh
+omp --model aws-mantle-openai/openai.gpt-6-astra
+```
+
+GPT-6 Astra supports text and image input, a 1,050,000-token context window, up to 128,000 output tokens, and `low`, `medium`, `high`, `xhigh`, and `max` reasoning effort. AWS charges higher token rates when input exceeds 272,000 tokens.
+
 Start a Grok 4.6 or GPT-5.6 model:
 
 ```sh
@@ -165,7 +173,7 @@ Base URL:
 https://bedrock-mantle.<region>.api.aws/openai/v1
 ```
 
-Grok 4.6, GPT-5.4, GPT-5.5, and GPT-5.6 use this dedicated OpenAI Responses endpoint. AWS serves these models from `/openai/v1/responses`, not the `/v1/responses` path used by GPT OSS. OMP sends `store: false`, so Mantle does not retain Responses state for the request.
+Grok 4.6, GPT-5.4, GPT-5.5, GPT-5.6, and GPT-6 Astra use this dedicated OpenAI Responses endpoint. AWS serves these models from `/openai/v1/responses`, not the `/v1/responses` path used by GPT OSS. OMP sends `store: false`, so Mantle does not retain Responses state for the request.
 
 ### `aws-mantle-anthropic`
 
@@ -186,7 +194,7 @@ Mantle's Models API reports availability but does not provide all metadata OMP n
 
 Unknown IDs are omitted and reported once. They are not assigned invented context limits, prices, modalities, or reasoning behavior.
 
-`openai.gpt-5.4`, `openai.gpt-5.5`, the `openai.gpt-5.6-{luna,sol,terra}` models, and `xai.grok-4.6` are partitioned into `aws-mantle-openai` because their AWS model cards declare the model-specific `/openai/v1` base path. All three providers share the same authenticated `/v1/models` discovery request.
+`openai.gpt-5.4`, `openai.gpt-5.5`, the `openai.gpt-5.6-{luna,sol,terra}` models, `openai.gpt-6-astra`, and `xai.grok-4.6` are partitioned into `aws-mantle-openai` because their AWS model cards declare the model-specific `/openai/v1` base path. All three providers share the same authenticated `/v1/models` discovery request.
 
 To add a model:
 

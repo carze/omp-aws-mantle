@@ -118,7 +118,7 @@ const server = Bun.serve({
     const url = new URL(request.url);
     if (url.pathname === "/v1/models") {
       discoveryAuthorization = request.headers.get("authorization");
-      return Response.json({ data: [{ id: "openai.gpt-5.6-terra" }, { id: "xai.grok-4.6" }, { id: "qwen.qwen3-coder-next" }] });
+      return Response.json({ data: [{ id: "openai.gpt-5.6-terra" }, { id: "openai.gpt-6-astra" }, { id: "xai.grok-4.6" }, { id: "qwen.qwen3-coder-next" }] });
     }
     if (url.pathname === "/v1/chat/completions") {
       inferenceAuthorization = request.headers.get("authorization");
@@ -150,7 +150,7 @@ const server = Bun.serve({
 try {
   const registrations = [];
   await createAwsMantleExtension({
-    environment: { AWS_MANTLE_REGION: "us-east-1" },
+    environment: { AWS_MANTLE_REGION: "us-west-2" },
     fetch: (input, init) => {
       const original = input instanceof Request && init === undefined ? input : new Request(input, init);
       return fetch(new URL("/v1/models", server.url), {
@@ -168,13 +168,13 @@ try {
   const openAIProvider = registrations.find(registration => registration.name === "aws-mantle-openai");
   assert(openAIProvider, "Packed extension did not register aws-mantle-openai");
   assert(
-    openAIProvider.config.baseUrl === "https://bedrock-mantle.us-east-1.api.aws/openai/v1",
+    openAIProvider.config.baseUrl === "https://bedrock-mantle.us-west-2.api.aws/openai/v1",
     "Packed extension used the wrong dedicated OpenAI base URL",
   );
   const openAIModels = await openAIProvider.config.fetchDynamicModels("packed-test-key");
   assert(
-    openAIModels.some(model => model.id === "openai.gpt-5.6-terra" && model.api === "openai-responses"),
-    "Packed extension did not route GPT-5.6 Terra through dedicated OpenAI Responses",
+    openAIModels.some(model => model.id === "openai.gpt-6-astra" && model.api === "openai-responses"),
+    "Packed extension did not route GPT-6 Astra through dedicated OpenAI Responses",
   );
   assert(
     openAIModels.some(model => model.id === "xai.grok-4.6" && model.api === "openai-responses"),
