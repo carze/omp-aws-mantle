@@ -11,7 +11,6 @@ describe("resolveMantleConfig", () => {
 
     expect(config).toEqual({
       region: "eu-west-1",
-      apiKeyConfig: "AWS_BEARER_TOKEN_BEDROCK",
       compatBaseUrl: "https://bedrock-mantle.eu-west-1.api.aws/v1",
       openAIBaseUrl: "https://bedrock-mantle.eu-west-1.api.aws/openai/v1",
       anthropicBaseUrl: "https://bedrock-mantle.eu-west-1.api.aws/anthropic/v1",
@@ -21,11 +20,12 @@ describe("resolveMantleConfig", () => {
   test("falls back through standard AWS region variables", () => {
     expect(resolveMantleConfig({ AWS_REGION: "us-east-2" }).region).toBe("us-east-2");
     expect(resolveMantleConfig({ AWS_DEFAULT_REGION: "us-west-2" }).region).toBe("us-west-2");
+    expect(resolveMantleConfig({ AWS_PROFILE: "mantle-dev", AWS_REGION: "us-east-1" }).profile).toBe("mantle-dev");
   });
 
   test("rejects a missing region", () => {
     expect(() => resolveMantleConfig({})).toThrow(
-      "AWS Mantle requires AWS_MANTLE_REGION, AWS_REGION, or AWS_DEFAULT_REGION",
+      "AWS Mantle requires AWS_MANTLE_REGION, AWS_REGION, AWS_DEFAULT_REGION, or an AWS profile with a region",
     );
   });
 

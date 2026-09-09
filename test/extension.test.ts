@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { AUTHENTICATED_SENTINEL } from "@oh-my-pi/pi-ai/registry";
 import type { ExtensionAPI, ProviderConfig } from "@oh-my-pi/pi-coding-agent";
 import { createAwsMantleExtension } from "../src/extension";
 
@@ -22,9 +23,12 @@ describe("AWS Mantle extension", () => {
     const { pi, registrations } = registrationHarness();
     const warnings: string[] = [];
     let discoveryRequests = 0;
+    let discoveryAuthorization: string | null = null;
     const extension = createAwsMantleExtension({
-      environment: { AWS_MANTLE_REGION: "us-east-1" },
-      fetch: async () => {
+      environment: { AWS_MANTLE_REGION: "us-east-1", AWS_PROFILE: "injected-profile" },
+      fetch: async (input, init) => {
+        const request = input instanceof Request && init === undefined ? input : new Request(input, init);
+        discoveryAuthorization = request.headers.get("authorization");
         discoveryRequests += 1;
         return Response.json({
           object: "list",
@@ -51,35 +55,36 @@ describe("AWS Mantle extension", () => {
     const compat = registrations.find(registration => registration.name === "aws-mantle");
     const openAI = registrations.find(registration => registration.name === "aws-mantle-openai");
     const anthropic = registrations.find(registration => registration.name === "aws-mantle-anthropic");
-    expect(compat?.config.baseUrl).toBe("https://bedrock-mantle.us-east-1.api.aws/v1");
-    expect(openAI?.config.baseUrl).toBe("https://bedrock-mantle.us-east-1.api.aws/openai/v1");
-    expect(anthropic?.config.baseUrl).toBe("https://bedrock-mantle.us-east-1.api.aws/anthropic/v1");
-    expect(compat?.config.apiKey).toBe("AWS_BEARER_TOKEN_BEDROCK");
-    expect(openAI?.config.apiKey).toBe("AWS_BEARER_TOKEN_BEDROCK");
-    expect(anthropic?.config.apiKey).toBe("AWS_BEARER_TOKEN_BEDROCK");
-    expect(compat?.config.streamSimple).toBeUndefined();
-    expect(openAI?.config.streamSimple).toBeUndefined();
-    expect(anthropic?.config.streamSimple).toBeUndefined();
+    expect(compat?.config.apiKey).toBe(AUTHENTICATED_SENTINEL);
+    expect(openAI?.config.apiKey).toBe(AUTHENTICATED_SENTINEL);
+    expect(anthropic?.config.apiKey).toBe(AUTHENTICATED_SENTINEL);
+    expect(compat?.config.api).toBe("aws-mantle-openai-compatible");
+    expect(openAI?.config.api).toBe("aws-mantle-openai-responses");
+    expect(anthropic?.config.api).toBe("aws-mantle-anthropic-messages");
+    expect(compat?.config.streamSimple).toBeFunction();
+    expect(openAI?.config.streamSimple).toBeFunction();
+    expect(anthropic?.config.streamSimple).toBeFunction();
     const [compatModels, openAIModels, anthropicModels] = await Promise.all([
       compat?.config.fetchDynamicModels?.("test-key"),
       openAI?.config.fetchDynamicModels?.("test-key"),
       anthropic?.config.fetchDynamicModels?.("test-key"),
     ]);
     expect(compatModels?.map(model => [model.id, model.api])).toEqual([
-      ["openai.gpt-oss-120b", "openai-responses"],
-      ["qwen.qwen3-coder-next", "openai-completions"],
+      ["openai.gpt-oss-120b", "aws-mantle-openai-compatible"],
+      ["qwen.qwen3-coder-next", "aws-mantle-openai-compatible"],
     ]);
     expect(openAIModels?.map(model => [model.id, model.api])).toEqual([
-      ["openai.gpt-5.5", "openai-responses"],
-      ["openai.gpt-5.6-luna", "openai-responses"],
-      ["openai.gpt-5.6-sol", "openai-responses"],
-      ["openai.gpt-5.6-terra", "openai-responses"],
-      ["openai.gpt-6-astra", "openai-responses"],
-      ["xai.grok-4.6", "openai-responses"],
+      ["openai.gpt-5.5", "aws-mantle-openai-responses"],
+      ["openai.gpt-5.6-luna", "aws-mantle-openai-responses"],
+      ["openai.gpt-5.6-sol", "aws-mantle-openai-responses"],
+      ["openai.gpt-5.6-terra", "aws-mantle-openai-responses"],
+      ["openai.gpt-6-astra", "aws-mantle-openai-responses"],
+      ["xai.grok-4.6", "aws-mantle-openai-responses"],
     ]);
     expect(anthropicModels?.map(model => [model.id, model.api])).toEqual([
-      ["anthropic.claude-sonnet-5", "anthropic-messages"],
+      ["anthropic.claude-sonnet-5", "aws-mantle-anthropic-messages"],
     ]);
+    expect(String(discoveryAuthorization)).toBe("Bearer test-key");
     expect(discoveryRequests).toBe(1);
     expect(warnings).toEqual([
       "AWS Mantle omitted models without verified metadata: brand-new-model",

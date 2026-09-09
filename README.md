@@ -2,14 +2,14 @@
 
 Native [Oh My Pi](https://github.com/can1357/oh-my-pi) provider plugin for models served by the AWS Bedrock Mantle endpoint.
 
-The plugin uses OMP's built-in OpenAI Responses, OpenAI Chat Completions, and Anthropic Messages transports. It does not copy the native Bedrock Converse/EventStream provider and does not install a custom streaming protocol.
+The plugin keeps OMP's built-in OpenAI Responses, OpenAI Chat Completions, and Anthropic Messages transports, then wraps their HTTP requests with OMP's native Mantle authentication fetch. It does not copy those streaming protocols.
 
 ## Requirements
 
-- Oh My Pi 16.4.1 or newer.
+- Oh My Pi 17.2.6 or newer.
 - An AWS account with access to the desired Bedrock models.
 - A supported Mantle region.
-- An Amazon Bedrock API key in `AWS_BEARER_TOKEN_BEDROCK`.
+- Either AWS credentials for SigV4, or an Amazon Bedrock API key in `AWS_BEARER_TOKEN_BEDROCK`.
 
 ## Install
 
@@ -47,59 +47,77 @@ omp plugin doctor
 
 ## Configure
 
-The plugin requires a Mantle region and an Amazon Bedrock bearer token. Keep both variables in the shell that launches OMP.
-
-### Existing AWS profile with a short-term token
-
-AWS's official token generator can derive a short-term bearer token from an existing AWS CLI profile without creating an IAM user or long-term access key.
-
-Create an isolated token-generator environment once:
+Set an explicit Mantle region, or use the region from the active AWS profile:
 
 ```sh
-python3 -m venv "$HOME/.local/share/omp-bedrock-token-generator"
-"$HOME/.local/share/omp-bedrock-token-generator/bin/python" \
-  -m pip install aws-bedrock-token-generator
+export AWS_MANTLE_REGION=us-east-1
 ```
 
-Select and verify your existing profile:
+Region precedence is:
+
+1. `AWS_MANTLE_REGION`
+2. `AWS_REGION`
+3. `AWS_DEFAULT_REGION`
+4. The active AWS shared-config profile's region
+
+The plugin fails during registration if no region is configured or if the region does not have a documented Mantle endpoint.
+
+### Recommended: AWS credentials with SigV4
+
+Select and verify an existing AWS profile:
 
 ```sh
 export AWS_PROFILE='<your-profile>'
 aws sts get-caller-identity --profile "$AWS_PROFILE"
 ```
 
-For an IAM Identity Center/SSO profile, refresh the session when needed:
+For an IAM Identity Center/SSO profile, log in before launching OMP:
 
 ```sh
 aws sso login --profile "$AWS_PROFILE"
 ```
 
-Resolve the profile's region and generate the bearer token without printing it:
+Do not set `AWS_BEARER_TOKEN_BEDROCK`. The plugin signs model discovery and inference requests for the `bedrock-mantle` service through OMP's native AWS credential resolver. Its credential chain supports:
 
-```sh
-export AWS_REGION="$(aws configure get region --profile "$AWS_PROFILE")"
-export AWS_MANTLE_REGION="$AWS_REGION"
-export AWS_BEARER_TOKEN_BEDROCK="$(
-  "$HOME/.local/share/omp-bedrock-token-generator/bin/python" \
-    -c 'from aws_bedrock_token_generator import provide_token; print(provide_token())'
-)"
+1. `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and optional `AWS_SESSION_TOKEN`
+2. Web identity (`AWS_WEB_IDENTITY_TOKEN_FILE` and `AWS_ROLE_ARN`)
+3. Shared AWS profiles, including static credentials, IAM Identity Center/SSO, `credential_process`, and role chaining
+4. ECS/container credentials
+5. EC2 instance metadata credentials
+
+Temporary credentials are refreshed before expiration. A `401` or `403` invalidates the cached credentials so the next request resolves the chain again. If an SSO token is absent or expired, the plugin reports the exact recovery command:
+
+```text
+aws sso login --profile "<your-profile>"
 ```
 
-Confirm only that the token has the expected shape:
+#### IAM permissions
 
-```sh
-if [[ "$AWS_BEARER_TOKEN_BEDROCK" == bedrock-api-key-* ]]; then
-  echo "Bedrock bearer token is ready"
-else
-  echo "Bearer token generation failed"
-fi
+The caller needs Mantle model discovery and inference permissions. This broad starting policy can be narrowed to the applicable Mantle project ARN:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "bedrock-mantle:ListModels",
+        "bedrock-mantle:CreateInference"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
 ```
 
-Do not print, log, commit, or place the bearer token in a shell startup file. Regenerate it when the underlying AWS session expires, then restart OMP.
+`ListModels` covers `GET /v1/models`. `CreateInference` covers the Responses, Chat Completions, and Anthropic Messages routes used by this plugin. Model access and any organization policies still apply.
 
-### Existing Bedrock API key
+See [AWS Mantle IAM actions](https://docs.aws.amazon.com/service-authorization/latest/reference/list_bedrock-mantle.html).
 
-If you already have a Bedrock API key, set it directly:
+### Optional: Bedrock bearer API key
+
+Bearer authentication remains available for local development or an existing key workflow:
 
 ```sh
 export AWS_MANTLE_REGION=us-east-1
@@ -108,17 +126,11 @@ echo
 export AWS_BEARER_TOKEN_BEDROCK
 ```
 
-Region precedence is:
+When `AWS_BEARER_TOKEN_BEDROCK` is present, it takes precedence over SigV4. The plugin reads it when creating each discovery or inference request, but it does not generate a replacement token. AWS recommends short-term keys for production and long-term keys only for exploration.
 
-1. `AWS_MANTLE_REGION`
-2. `AWS_REGION`
-3. `AWS_DEFAULT_REGION`
+Do not print, log, commit, or place the bearer token in a shell startup file. Prefer SigV4 when the source credentials can expire because OMP refreshes that credential chain in-process.
 
-The plugin fails during registration if no region is configured or if the region does not have a documented Mantle endpoint. It never persists or logs the resolved key.
-
-AWS Bedrock API keys can be short-term or long-term. Short-term keys expire after at most 12 hours, or when their source AWS session expires. The plugin does not generate or refresh keys in-process. AWS recommends short-term keys for production and long-term keys only for exploration.
-
-See [AWS Bedrock API keys](https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys.html) and the [AWS Bedrock Token Generator](https://github.com/aws/aws-bedrock-token-generator-python).
+See [AWS Bedrock API keys](https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys.html).
 
 Refresh discovery and verify all endpoint-family providers:
 
@@ -183,7 +195,7 @@ Base URL:
 https://bedrock-mantle.<region>.api.aws/anthropic/v1
 ```
 
-Claude models use OMP's `anthropic-messages` transport. Model metadata includes the required Mantle `X-Api-Key` configuration and the transport sends `anthropic-version: 2023-06-01`.
+Claude models use OMP's `anthropic-messages` transport and send `anthropic-version: 2023-06-01`. Bearer requests add Mantle's `X-Api-Key`; SigV4 requests omit it and sign the request instead.
 
 ## Model discovery
 
@@ -213,12 +225,12 @@ OMP owns the durable 24-hour runtime model cache. The plugin only coalesces conc
 - Anthropic Messages SSE.
 - Client-side tools.
 - Supported text, image, reasoning, and Claude thinking capabilities on curated models.
+- SigV4 authentication with automatic AWS credential-chain refresh.
 - Bearer API-key authentication.
 
 ## Deliberately unsupported
 
 - Native Bedrock Converse or binary EventStream.
-- SigV4 request signing and automatic AWS credential-chain refresh.
 - Cross-region inference profiles.
 - Bedrock Guardrails on Mantle.
 - Anthropic Messages `output_config.format`; AWS rejects this on Mantle.
@@ -244,15 +256,16 @@ The release smoke packs the npm artifact, installs the tarball into an isolated 
 bun run test:pack
 ```
 
-Opt-in real AWS model listing and one streamed response:
+Opt-in real AWS model listing and one streamed response with SigV4:
 
 ```sh
+AWS_MANTLE_REAL_SMOKE=1 \
 AWS_MANTLE_REGION=us-east-1 \
-AWS_BEARER_TOKEN_BEDROCK='<key>' \
+AWS_PROFILE='<your-profile>' \
 bun test test/real-aws.smoke.test.ts
 ```
 
-Without both a key and region, the real-AWS test is skipped.
+Set `AWS_BEARER_TOKEN_BEDROCK` instead of `AWS_PROFILE` to exercise bearer authentication. Without `AWS_MANTLE_REAL_SMOKE=1`, the real-AWS test is skipped.
 
 ## References
 

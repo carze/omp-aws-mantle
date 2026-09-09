@@ -1,20 +1,27 @@
 import { expect, test } from "bun:test";
+import { NO_AUTH_SENTINEL } from "@oh-my-pi/pi-ai/providers/openai-shared";
 import { streamOpenAIResponses } from "@oh-my-pi/pi-ai/providers/openai-responses";
 import type { Context, Model } from "@oh-my-pi/pi-ai/types";
 import { buildModel } from "@oh-my-pi/pi-catalog/build";
+import { createMantleAuthenticatedFetch, resolveMantleBearerToken } from "../src/auth";
 import { resolveMantleConfig } from "../src/config";
 import { discoverMantleModels } from "../src/discover-models";
 import { selectOpenAIResponsesModels } from "../src/model-catalog";
 
-const apiKey = process.env.AWS_BEARER_TOKEN_BEDROCK;
-const hasRegion = Boolean(
-  process.env.AWS_MANTLE_REGION || process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION,
-);
+const runRealSmoke = process.env.AWS_MANTLE_REAL_SMOKE === "1";
 
-test.skipIf(!apiKey || !hasRegion)("lists and streams GPT-5.6 Terra through its dedicated endpoint", async () => {
-  if (!apiKey) throw new Error("AWS_BEARER_TOKEN_BEDROCK is required");
+test.skipIf(!runRealSmoke)("lists and streams GPT-5.6 Terra through its dedicated endpoint", async () => {
+  const bearerToken = resolveMantleBearerToken();
   const config = resolveMantleConfig();
-  const discovered = await discoverMantleModels({ baseUrl: config.compatBaseUrl, apiKey });
+  const authenticatedFetch = createMantleAuthenticatedFetch({
+    region: config.region,
+    ...(config.profile ? { profile: config.profile } : {}),
+    ...(bearerToken ? { bearerToken } : {}),
+  });
+  const discovered = await discoverMantleModels({
+    baseUrl: config.compatBaseUrl,
+    fetch: authenticatedFetch,
+  });
   expect(discovered.length).toBeGreaterThan(0);
 
   const selected = selectOpenAIResponsesModels(discovered).find(model => model.id === "openai.gpt-5.6-terra");
@@ -39,7 +46,11 @@ test.skipIf(!apiKey || !hasRegion)("lists and streams GPT-5.6 Terra through its 
   const context: Context = {
     messages: [{ role: "user", content: "Reply with exactly OK", timestamp: Date.now() }],
   };
-  const options = { apiKey, maxTokens: 32 };
+  const options = {
+    apiKey: bearerToken ?? NO_AUTH_SENTINEL,
+    fetch: authenticatedFetch,
+    maxTokens: 32,
+  };
   const result = await streamOpenAIResponses(
     model as Model<"openai-responses">,
     context,

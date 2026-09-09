@@ -1,4 +1,13 @@
 // @bun
+// src/extension.ts
+import { streamAnthropic } from "@oh-my-pi/pi-ai/providers/anthropic";
+import { streamOpenAICompletions } from "@oh-my-pi/pi-ai/providers/openai-completions";
+import { streamOpenAIResponses } from "@oh-my-pi/pi-ai/providers/openai-responses";
+import { NO_AUTH_SENTINEL } from "@oh-my-pi/pi-ai/providers/openai-shared";
+import { resolveAwsRegistryApiKey } from "@oh-my-pi/pi-ai/registry/aws";
+import { AUTHENTICATED_SENTINEL } from "@oh-my-pi/pi-ai/registry";
+import { buildModel } from "@oh-my-pi/pi-catalog/build";
+
 // src/anthropic-catalog.ts
 var ADAPTIVE_EFFORTS = ["low", "medium", "high", "max"];
 var BUDGET_EFFORTS = ["minimal", "low", "medium", "high"];
@@ -7,7 +16,6 @@ var MANTLE_ANTHROPIC_MODELS = {
     id: "anthropic.claude-fable-5",
     name: "Claude Fable 5 (AWS Mantle)",
     api: "anthropic-messages",
-    headers: { "X-Api-Key": "AWS_BEARER_TOKEN_BEDROCK" },
     reasoning: true,
     thinking: { mode: "anthropic-adaptive", efforts: ADAPTIVE_EFFORTS, supportsDisplay: true },
     input: ["text", "image"],
@@ -19,7 +27,6 @@ var MANTLE_ANTHROPIC_MODELS = {
     id: "anthropic.claude-haiku-4-5",
     name: "Claude Haiku 4.5 (AWS Mantle)",
     api: "anthropic-messages",
-    headers: { "X-Api-Key": "AWS_BEARER_TOKEN_BEDROCK" },
     reasoning: true,
     thinking: { mode: "budget", efforts: BUDGET_EFFORTS },
     input: ["text", "image"],
@@ -31,7 +38,6 @@ var MANTLE_ANTHROPIC_MODELS = {
     id: "anthropic.claude-opus-4-7",
     name: "Claude Opus 4.7 (AWS Mantle)",
     api: "anthropic-messages",
-    headers: { "X-Api-Key": "AWS_BEARER_TOKEN_BEDROCK" },
     reasoning: true,
     thinking: { mode: "anthropic-adaptive", efforts: ADAPTIVE_EFFORTS, supportsDisplay: true },
     input: ["text", "image"],
@@ -43,7 +49,6 @@ var MANTLE_ANTHROPIC_MODELS = {
     id: "anthropic.claude-opus-4-8",
     name: "Claude Opus 4.8 (AWS Mantle)",
     api: "anthropic-messages",
-    headers: { "X-Api-Key": "AWS_BEARER_TOKEN_BEDROCK" },
     reasoning: true,
     thinking: { mode: "anthropic-adaptive", efforts: ADAPTIVE_EFFORTS, supportsDisplay: true },
     input: ["text", "image"],
@@ -55,7 +60,6 @@ var MANTLE_ANTHROPIC_MODELS = {
     id: "anthropic.claude-sonnet-5",
     name: "Claude Sonnet 5 (AWS Mantle)",
     api: "anthropic-messages",
-    headers: { "X-Api-Key": "AWS_BEARER_TOKEN_BEDROCK" },
     reasoning: true,
     thinking: { mode: "anthropic-adaptive", efforts: ADAPTIVE_EFFORTS, supportsDisplay: true },
     input: ["text", "image"],
@@ -76,7 +80,40 @@ function selectAnthropicModels(discovered) {
   return Object.keys(selected).sort().map((id) => selected[id]);
 }
 
+// src/auth.ts
+import { AwsCredentialsError } from "@oh-my-pi/pi-ai/error";
+import { createBedrockMantleAuthenticatedFetch } from "@oh-my-pi/pi-ai/providers/bedrock-mantle";
+import { resolveAwsBearerToken } from "@oh-my-pi/pi-ai/registry/aws";
+function resolveMantleBearerToken(explicitToken, environment = process.env) {
+  return resolveAwsBearerToken(explicitToken?.trim(), environment.AWS_BEARER_TOKEN_BEDROCK?.trim());
+}
+function createMantleAuthenticatedFetch(options) {
+  const authenticatedFetch = createBedrockMantleAuthenticatedFetch({
+    ...options.bearerToken ? { apiKey: options.bearerToken } : {},
+    ...options.fetch ? { fetch: options.fetch } : {},
+    ...options.signal ? { signal: options.signal } : {},
+    providerOptions: {
+      region: options.region,
+      ...options.profile ? { profile: options.profile } : {}
+    }
+  });
+  return async (input, init) => {
+    try {
+      return await authenticatedFetch(input, init);
+    } catch (error) {
+      if (error instanceof AwsCredentialsError && (error.kind === "sso-token-missing" || error.kind === "sso-token-expired")) {
+        const profile = options.profile?.trim() || process.env.AWS_PROFILE?.trim() || "default";
+        const reason = error.kind === "sso-token-expired" ? "has expired" : "was not found";
+        const shellQuotedProfile = `'${profile.replaceAll("'", `'"'"'`)}'`;
+        throw new AwsCredentialsError(`AWS SSO credentials for profile ${JSON.stringify(profile)} ${reason}. Run: aws sso login --profile ${shellQuotedProfile}`, error.kind, { cause: error });
+      }
+      throw error;
+    }
+  };
+}
+
 // src/config.ts
+import { resolveAwsProfileRegion } from "@oh-my-pi/pi-ai/utils/aws-profile";
 var MANTLE_REGIONS = [
   "ap-northeast-1",
   "ap-south-1",
@@ -94,14 +131,11 @@ var MANTLE_REGIONS = [
   "us-west-2"
 ];
 function resolveMantleConfig(environment) {
-  const source = environment ?? {
-    AWS_MANTLE_REGION: process.env.AWS_MANTLE_REGION,
-    AWS_REGION: process.env.AWS_REGION,
-    AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION
-  };
-  const requestedRegion = source.AWS_MANTLE_REGION?.trim() || source.AWS_REGION?.trim() || source.AWS_DEFAULT_REGION?.trim();
+  const source = environment ?? process.env;
+  const profile = source.AWS_PROFILE?.trim() || undefined;
+  const requestedRegion = source.AWS_MANTLE_REGION?.trim() || source.AWS_REGION?.trim() || source.AWS_DEFAULT_REGION?.trim() || (environment === undefined ? resolveAwsProfileRegion(profile) : undefined);
   if (!requestedRegion) {
-    throw new Error("AWS Mantle requires AWS_MANTLE_REGION, AWS_REGION, or AWS_DEFAULT_REGION");
+    throw new Error("AWS Mantle requires AWS_MANTLE_REGION, AWS_REGION, AWS_DEFAULT_REGION, or an AWS profile with a region");
   }
   if (!MANTLE_REGIONS.includes(requestedRegion)) {
     throw new Error(`Unsupported AWS Mantle region ${JSON.stringify(requestedRegion)}`);
@@ -110,7 +144,7 @@ function resolveMantleConfig(environment) {
   const host = `https://bedrock-mantle.${region}.api.aws`;
   return {
     region,
-    apiKeyConfig: "AWS_BEARER_TOKEN_BEDROCK",
+    ...profile ? { profile } : {},
     compatBaseUrl: `${host}/v1`,
     openAIBaseUrl: `${host}/openai/v1`,
     anthropicBaseUrl: `${host}/anthropic/v1`
@@ -118,6 +152,7 @@ function resolveMantleConfig(environment) {
 }
 
 // src/discover-models.ts
+import { AwsCredentialsError as AwsCredentialsError2 } from "@oh-my-pi/pi-ai/error";
 function invalidResponse(detail) {
   return new Error(`Invalid AWS Mantle models response: ${detail}`);
 }
@@ -173,13 +208,13 @@ function parseModelsResponse(value) {
   return models;
 }
 async function discoverMantleModels(options) {
-  const apiKey = options.apiKey.trim();
-  if (!apiKey) {
-    throw new Error("AWS Mantle model discovery requires a Bedrock API key");
-  }
+  const apiKey = options.apiKey?.trim();
   const request = new Request(`${options.baseUrl.replace(/\/+$/, "")}/models`, {
     method: "GET",
-    headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+      ...apiKey ? { Authorization: `Bearer ${apiKey}` } : {}
+    },
     ...options.signal ? { signal: options.signal } : {}
   });
   let response;
@@ -189,6 +224,8 @@ async function discoverMantleModels(options) {
     if (options.signal?.aborted || error instanceof DOMException && error.name === "AbortError") {
       throw new Error("AWS Mantle model discovery was cancelled or timed out");
     }
+    if (error instanceof AwsCredentialsError2)
+      throw error;
     throw new Error("AWS Mantle model discovery request failed");
   }
   if (!response.ok)
@@ -598,21 +635,82 @@ function selectOpenAIModels(discovered) {
 }
 
 // src/extension.ts
+var MANTLE_COMPAT_API = "aws-mantle-openai-compatible";
+var MANTLE_RESPONSES_API = "aws-mantle-openai-responses";
+var MANTLE_ANTHROPIC_API = "aws-mantle-anthropic-messages";
+function routeModels(models, api) {
+  return models.map((model) => ({ ...model, api }));
+}
+function createTransportModelResolver(resolveApi) {
+  const cache = new WeakMap;
+  return (model) => {
+    const cached = cache.get(model);
+    if (cached)
+      return cached;
+    const { compat: _resolvedCompat, compatConfig, ...spec } = model;
+    const api = resolveApi(model);
+    const transportModel = buildModel({
+      ...spec,
+      api,
+      ...compatConfig === undefined ? {} : { compat: compatConfig }
+    });
+    cache.set(model, transportModel);
+    return transportModel;
+  };
+}
+function createAuthenticatedStream(config, extensionOptions, resolveApi, includeAnthropicApiKey) {
+  const resolveTransportModel = createTransportModelResolver(resolveApi);
+  return (model, context, streamOptions = {}) => {
+    const explicitToken = typeof streamOptions.apiKey === "string" ? streamOptions.apiKey : undefined;
+    const bearerToken = resolveMantleBearerToken(explicitToken, extensionOptions.environment ?? process.env);
+    const authenticatedFetch = createMantleAuthenticatedFetch({
+      region: config.region,
+      ...config.profile ? { profile: config.profile } : {},
+      ...bearerToken ? { bearerToken } : {},
+      ...streamOptions.fetch ?? extensionOptions.fetch ? { fetch: streamOptions.fetch ?? extensionOptions.fetch } : {},
+      ...streamOptions.signal ? { signal: streamOptions.signal } : {}
+    });
+    const transportModel = resolveTransportModel(model);
+    const options = {
+      ...streamOptions,
+      apiKey: bearerToken ?? NO_AUTH_SENTINEL,
+      fetch: authenticatedFetch,
+      ...includeAnthropicApiKey && bearerToken ? { headers: { ...streamOptions.headers, "X-Api-Key": bearerToken } } : {}
+    };
+    if (transportModel.api === "openai-responses") {
+      return streamOpenAIResponses(transportModel, context, options);
+    }
+    if (transportModel.api === "openai-completions") {
+      return streamOpenAICompletions(transportModel, context, options);
+    }
+    if (transportModel.api === "anthropic-messages") {
+      return streamAnthropic(transportModel, context, options);
+    }
+    throw new Error(`Unsupported AWS Mantle transport ${JSON.stringify(transportModel.api)}`);
+  };
+}
 function createAwsMantleExtension(options = {}) {
   return (pi) => {
     const config = resolveMantleConfig(options.environment);
     const warn = options.warn ?? ((message) => pi.logger.warn(message));
-    let cachedKey;
+    const hasInjectedAuthentication = Boolean(config.profile || options.environment?.AWS_BEARER_TOKEN_BEDROCK?.trim());
+    const registryApiKey = resolveAwsRegistryApiKey() || (hasInjectedAuthentication ? AUTHENTICATED_SENTINEL : undefined);
+    let cachedBearerToken;
     let cachedModels;
     const loadModels = (apiKey) => {
-      const resolvedKey = apiKey ?? "";
-      if (cachedModels && cachedKey === resolvedKey)
+      const bearerToken = resolveMantleBearerToken(apiKey, options.environment ?? process.env);
+      if (cachedModels && cachedBearerToken === bearerToken)
         return cachedModels;
-      cachedKey = resolvedKey;
+      cachedBearerToken = bearerToken;
+      const authenticatedFetch = createMantleAuthenticatedFetch({
+        region: config.region,
+        ...config.profile ? { profile: config.profile } : {},
+        ...bearerToken ? { bearerToken } : {},
+        ...options.fetch ? { fetch: options.fetch } : {}
+      });
       const pending = discoverMantleModels({
         baseUrl: config.compatBaseUrl,
-        apiKey: resolvedKey,
-        ...options.fetch ? { fetch: options.fetch } : {}
+        fetch: authenticatedFetch
       }).then((discovered) => {
         const openAI = selectOpenAIModels(discovered);
         const unknownIds = openAI.unknownIds.filter((id) => !isKnownAnthropicModelId(id) && !Object.hasOwn(MANTLE_OPENAI_RESPONSES_MODELS, id));
@@ -620,16 +718,16 @@ function createAwsMantleExtension(options = {}) {
           warn(`AWS Mantle omitted models without verified metadata: ${unknownIds.join(", ")}`);
         }
         return {
-          openAI: openAI.models,
-          openAIResponses: selectOpenAIResponsesModels(discovered),
-          anthropic: selectAnthropicModels(discovered)
+          openAI: routeModels(openAI.models, MANTLE_COMPAT_API),
+          openAIResponses: routeModels(selectOpenAIResponsesModels(discovered), MANTLE_RESPONSES_API),
+          anthropic: routeModels(selectAnthropicModels(discovered), MANTLE_ANTHROPIC_API)
         };
       });
       let guarded;
       guarded = pending.catch((error) => {
         if (cachedModels === guarded) {
           cachedModels = undefined;
-          cachedKey = undefined;
+          cachedBearerToken = undefined;
         }
         throw error;
       });
@@ -638,17 +736,29 @@ function createAwsMantleExtension(options = {}) {
     };
     pi.registerProvider("aws-mantle", {
       baseUrl: config.compatBaseUrl,
-      apiKey: config.apiKeyConfig,
+      ...registryApiKey ? { apiKey: registryApiKey } : {},
+      api: MANTLE_COMPAT_API,
+      streamSimple: createAuthenticatedStream(config, options, (model) => {
+        const definition = MANTLE_OPENAI_MODELS[model.id];
+        if (!definition) {
+          throw new Error(`No AWS Mantle transport metadata for ${JSON.stringify(model.id)}`);
+        }
+        return definition.api;
+      }, false),
       fetchDynamicModels: async (apiKey) => (await loadModels(apiKey)).openAI
     });
     pi.registerProvider("aws-mantle-openai", {
       baseUrl: config.openAIBaseUrl,
-      apiKey: config.apiKeyConfig,
+      ...registryApiKey ? { apiKey: registryApiKey } : {},
+      api: MANTLE_RESPONSES_API,
+      streamSimple: createAuthenticatedStream(config, options, () => "openai-responses", false),
       fetchDynamicModels: async (apiKey) => (await loadModels(apiKey)).openAIResponses
     });
     pi.registerProvider("aws-mantle-anthropic", {
       baseUrl: config.anthropicBaseUrl,
-      apiKey: config.apiKeyConfig,
+      ...registryApiKey ? { apiKey: registryApiKey } : {},
+      api: MANTLE_ANTHROPIC_API,
+      streamSimple: createAuthenticatedStream(config, options, () => "anthropic-messages", true),
       fetchDynamicModels: async (apiKey) => (await loadModels(apiKey)).anthropic
     });
   };

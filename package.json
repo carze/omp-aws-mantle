@@ -30,7 +30,7 @@
     ".": "./dist/extension.js"
   },
   "scripts": {
-    "build": "bun build ./src/extension.ts --outdir ./dist --target bun --format esm --external @oh-my-pi/pi-coding-agent --external @oh-my-pi/pi-ai",
+    "build": "bun build ./src/extension.ts --outdir ./dist --target bun --format esm --external @oh-my-pi/pi-coding-agent --external @oh-my-pi/pi-ai --external @oh-my-pi/pi-catalog",
     "typecheck": "tsgo -p tsconfig.json --noEmit",
     "test": "bun test",
     "check": "bun run typecheck && bun test && bun run build",
@@ -38,8 +38,9 @@
     "prepack": "bun run check"
   },
   "peerDependencies": {
-    "@oh-my-pi/pi-ai": ">=16.4.1",
-    "@oh-my-pi/pi-coding-agent": ">=16.4.1"
+    "@oh-my-pi/pi-ai": ">=17.2.6",
+    "@oh-my-pi/pi-catalog": ">=17.2.6",
+    "@oh-my-pi/pi-coding-agent": ">=17.2.6"
   },
   "devDependencies": {
     "@oh-my-pi/pi-coding-agent": "17.4.0",

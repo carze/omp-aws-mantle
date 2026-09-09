@@ -27,10 +27,16 @@ describe("AWS Mantle host lifecycle", () => {
   let authStorage: AuthStorage;
   let registry: ModelRegistry;
   const originalApiKey = process.env.AWS_BEARER_TOKEN_BEDROCK;
+  const originalAccessKey = process.env.AWS_ACCESS_KEY_ID;
+  const originalSecretKey = process.env.AWS_SECRET_ACCESS_KEY;
+  const originalSessionToken = process.env.AWS_SESSION_TOKEN;
 
   beforeEach(async () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "omp-aws-mantle-host-"));
-    process.env.AWS_BEARER_TOKEN_BEDROCK = "host-cache-test-key";
+    delete process.env.AWS_BEARER_TOKEN_BEDROCK;
+    process.env.AWS_ACCESS_KEY_ID = "AKIDHOST";
+    process.env.AWS_SECRET_ACCESS_KEY = "host-secret";
+    process.env.AWS_SESSION_TOKEN = "host-session";
     authStorage = await AuthStorage.create(path.join(tempDir, "auth.db"));
     registry = new ModelRegistry(authStorage, path.join(tempDir, "models.json"));
   });
@@ -40,14 +46,23 @@ describe("AWS Mantle host lifecycle", () => {
     fs.rmSync(tempDir, { recursive: true, force: true });
     if (originalApiKey === undefined) delete process.env.AWS_BEARER_TOKEN_BEDROCK;
     else process.env.AWS_BEARER_TOKEN_BEDROCK = originalApiKey;
+    if (originalAccessKey === undefined) delete process.env.AWS_ACCESS_KEY_ID;
+    else process.env.AWS_ACCESS_KEY_ID = originalAccessKey;
+    if (originalSecretKey === undefined) delete process.env.AWS_SECRET_ACCESS_KEY;
+    else process.env.AWS_SECRET_ACCESS_KEY = originalSecretKey;
+    if (originalSessionToken === undefined) delete process.env.AWS_SESSION_TOKEN;
+    else process.env.AWS_SESSION_TOKEN = originalSessionToken;
   });
 
   test("uses the host 24-hour cache and removes models with their extension source", async () => {
     let discoveryRequests = 0;
+    let discoveryAuthorization: string | null = null;
     const { pi, registrations } = registrationHarness();
     await createAwsMantleExtension({
       environment: { AWS_MANTLE_REGION: "us-east-1" },
-      fetch: async () => {
+      fetch: async (input, init) => {
+        const request = input instanceof Request && init === undefined ? input : new Request(input, init);
+        discoveryAuthorization = request.headers.get("authorization");
         discoveryRequests += 1;
         return Response.json({
           data: [
@@ -69,6 +84,9 @@ describe("AWS Mantle host lifecycle", () => {
     expect(registry.find("aws-mantle-openai", "openai.gpt-5.5")).toBeDefined();
     expect(registry.find("aws-mantle-anthropic", "anthropic.claude-sonnet-5")).toBeDefined();
     expect(discoveryRequests).toBe(1);
+    expect(discoveryAuthorization ?? "").toMatch(
+      /Credential=AKIDHOST\/\d{8}\/us-east-1\/bedrock-mantle\/aws4_request/,
+    );
 
     await registry.refreshRuntimeProviders("online-if-uncached");
     expect(discoveryRequests).toBe(1);

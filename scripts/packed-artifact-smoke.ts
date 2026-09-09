@@ -84,7 +84,6 @@ try {
   const smokeSource = String.raw`
 import * as path from "node:path";
 import { createAwsMantleExtension } from "omp-aws-mantle";
-import { streamOpenAICompletions } from "@oh-my-pi/pi-ai/providers/openai-completions";
 import { buildModel } from "@oh-my-pi/pi-catalog/build";
 import { PluginManager } from "@oh-my-pi/pi-coding-agent/extensibility/plugins/manager";
 import { getEnabledPlugins } from "@oh-my-pi/pi-coding-agent/extensibility/plugins/loader";
@@ -164,7 +163,7 @@ try {
   assert(provider, "Packed extension did not register aws-mantle");
   const models = await provider.config.fetchDynamicModels("packed-test-key");
   const selected = models.find(model => model.id === "qwen.qwen3-coder-next");
-  assert(selected?.api === "openai-completions", "Packed extension did not route the chat model");
+  assert(selected?.api === "aws-mantle-openai-compatible", "Packed extension did not route the chat model");
   const openAIProvider = registrations.find(registration => registration.name === "aws-mantle-openai");
   assert(openAIProvider, "Packed extension did not register aws-mantle-openai");
   assert(
@@ -173,11 +172,11 @@ try {
   );
   const openAIModels = await openAIProvider.config.fetchDynamicModels("packed-test-key");
   assert(
-    openAIModels.some(model => model.id === "openai.gpt-6-astra" && model.api === "openai-responses"),
+    openAIModels.some(model => model.id === "openai.gpt-6-astra" && model.api === "aws-mantle-openai-responses"),
     "Packed extension did not route GPT-6 Astra through dedicated OpenAI Responses",
   );
   assert(
-    openAIModels.some(model => model.id === "xai.grok-4.6" && model.api === "openai-responses"),
+    openAIModels.some(model => model.id === "xai.grok-4.6" && model.api === "aws-mantle-openai-responses"),
     "Packed extension did not route Grok 4.6 through dedicated OpenAI Responses",
   );
   const model = buildModel({
@@ -194,10 +193,11 @@ try {
     ...(selected.thinking ? { thinking: selected.thinking } : {}),
     ...(selected.compat ? { compat: selected.compat } : {}),
   });
-  const result = await streamOpenAICompletions(
+  assert(provider.config.streamSimple, "Packed extension did not register its authenticated stream");
+  const result = await provider.config.streamSimple(
     model,
     { messages: [{ role: "user", content: "Say hello", timestamp: Date.now() }] },
-    { apiKey: "packed-test-key" },
+    { apiKey: "packed-test-key", fetch },
   ).result();
   assert(discoveryAuthorization === "Bearer packed-test-key", "Discovery bearer token was not sent");
   assert(inferenceAuthorization === "Bearer packed-test-key", "Inference bearer token was not sent");

@@ -96,21 +96,6 @@ describe("discoverMantleModels", () => {
     ).rejects.toThrow("AWS Mantle model discovery returned non-JSON content");
   });
 
-  test("requires a non-empty key before making a request", async () => {
-    let called = false;
-    await expect(
-      discoverMantleModels({
-        baseUrl: "https://example.test/v1",
-        apiKey: " ",
-        fetch: async () => {
-          called = true;
-          return jsonResponse({ data: [] });
-        },
-      }),
-    ).rejects.toThrow("AWS Mantle model discovery requires a Bedrock API key");
-    expect(called).toBe(false);
-  });
-
   test("turns aborts into a stable sanitized error", async () => {
     const controller = new AbortController();
     controller.abort();

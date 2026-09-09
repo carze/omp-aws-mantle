@@ -1,3 +1,5 @@
+import { AwsCredentialsError } from "@oh-my-pi/pi-ai/error";
+
 import type { DiscoverMantleModelsOptions, MantleModelRecord } from "./types";
 
 function invalidResponse(detail: string): Error {
@@ -62,14 +64,13 @@ function parseModelsResponse(value: unknown): readonly MantleModelRecord[] {
 export async function discoverMantleModels(
   options: DiscoverMantleModelsOptions,
 ): Promise<readonly MantleModelRecord[]> {
-  const apiKey = options.apiKey.trim();
-  if (!apiKey) {
-    throw new Error("AWS Mantle model discovery requires a Bedrock API key");
-  }
-
+  const apiKey = options.apiKey?.trim();
   const request = new Request(`${options.baseUrl.replace(/\/+$/, "")}/models`, {
     method: "GET",
-    headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+    },
     ...(options.signal ? { signal: options.signal } : {}),
   });
 
@@ -80,6 +81,7 @@ export async function discoverMantleModels(
     if (options.signal?.aborted || (error instanceof DOMException && error.name === "AbortError")) {
       throw new Error("AWS Mantle model discovery was cancelled or timed out");
     }
+    if (error instanceof AwsCredentialsError) throw error;
     throw new Error("AWS Mantle model discovery request failed");
   }
 

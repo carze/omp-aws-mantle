@@ -9,7 +9,7 @@ export type MantleFetch = (input: string | URL | Request, init?: RequestInit) =>
 
 export interface DiscoverMantleModelsOptions {
   readonly baseUrl: string;
-  readonly apiKey: string;
+  readonly apiKey?: string;
   readonly fetch?: MantleFetch;
   readonly signal?: AbortSignal;
 }
