@@ -1,0 +1,22 @@
+CHANGELOG.md
+  h_620afb38050b2a 18
+dist/extension.js
+  h_620afb38050b2a 216
+src/discover-models.ts
+  h_620afb38050b2a 72
+test/discover-models.test.ts
+  h_620afb38050b2a 29
+test/host-lifecycle.test.ts
+  h_620afb38050b2a 60,67,92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "6c82bff2a056a339078e0f8515517371996f465d",
+  "prompts": {},
+  "humans": {
+    "h_620afb38050b2a": {
+      "author": "Cesar Arze <cesar.arze@gmail.com>"
+    }
+  }
+}
