@@ -1,0 +1,14 @@
+.github/workflows/ci.yml
+  h_620afb38050b2a 48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "978e54cd52b04b7794b297873246308348168ec3",
+  "prompts": {},
+  "humans": {
+    "h_620afb38050b2a": {
+      "author": "Cesar Arze <cesar.arze@gmail.com>"
+    }
+  }
+}
