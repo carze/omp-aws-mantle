@@ -89,7 +89,7 @@ describe("AWS Mantle host lifecycle", () => {
     expect(discoveryAuthorization ?? "").toMatch(
       /Credential=AKIDHOST\/\d{8}\/us-east-1\/bedrock-mantle\/aws4_request/,
     );
-    expect(String(discoveryRequestContentType)).toBe("application/json");
+    expect(discoveryRequestContentType ?? "").toBe("application/json");
 
     await registry.refreshRuntimeProviders("online-if-uncached");
     expect(discoveryRequests).toBe(1);

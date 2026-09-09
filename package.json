@@ -1,6 +1,6 @@
 {
   "name": "omp-aws-mantle",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AWS Bedrock Mantle model provider plugin for Oh My Pi",
   "type": "module",
   "license": "MIT",
@@ -50,7 +50,7 @@
     "@typescript/native-preview": "7.0.0-dev.20260609.1"
   },
   "omp": {
-    "version": "0.1.0",
+    "version": "0.1.1",
     "extensions": [
       "./dist/extension.js"
     ]

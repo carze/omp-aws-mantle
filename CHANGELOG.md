@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 0.1.1 - 2026-09-09
+
 ### Added
 
 - Added GPT-6 Astra through the dedicated `aws-mantle-openai` Responses endpoint with its full 1,050,000-token context window, AWS pricing, image input, and five-tier reasoning support.
