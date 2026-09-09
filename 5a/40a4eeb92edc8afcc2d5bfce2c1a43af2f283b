@@ -1,0 +1,18 @@
+CHANGELOG.md
+  h_620afb38050b2a 5-6
+package.json
+  h_620afb38050b2a 3,53
+test/host-lifecycle.test.ts
+  h_620afb38050b2a 92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "5a40a4eeb92edc8afcc2d5bfce2c1a43af2f283b",
+  "prompts": {},
+  "humans": {
+    "h_620afb38050b2a": {
+      "author": "Cesar Arze <cesar.arze@gmail.com>"
+    }
+  }
+}
