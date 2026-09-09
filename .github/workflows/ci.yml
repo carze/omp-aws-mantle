@@ -45,7 +45,6 @@ jobs:
     env:
       AWS_BEARER_TOKEN_BEDROCK: ${{ secrets.AWS_BEARER_TOKEN_BEDROCK }}
       AWS_MANTLE_REGION: ${{ vars.AWS_MANTLE_REGION }}
-      AWS_MANTLE_REAL_SMOKE: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
