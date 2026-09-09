@@ -1,0 +1,48 @@
+CHANGELOG.md
+  h_620afb38050b2a 10-11,17
+README.md
+  h_620afb38050b2a 5,9,12,50,52-54,56-61,63,65,67,74,80,82-86,88,90-111,114-116,118,120,129,131,133,198,228,259,262,264,268
+bun.lock
+  h_620afb38050b2a 15-17
+dist/extension.js
+  h_620afb38050b2a 2-10,83-114,116,134-136,138,147,155,211,214-217,227-228,638-691,696-698,701-702,704-710,713,721-723,730,739-747,752-754,759-761
+package.json
+  h_620afb38050b2a 33,41-43
+scripts/packed-artifact-smoke.ts
+  h_620afb38050b2a 166,175,179,196-197,200
+src/auth.ts
+  h_620afb38050b2a 1-52
+src/config.ts
+  h_620afb38050b2a 1-2,27,32,39-40,44-45,48-50,60
+src/discover-models.ts
+  h_620afb38050b2a 1-2,67,70-73,84
+src/extension.ts
+  h_620afb38050b2a 1-8,11-12,15,22-25,32-98,103-108,116-124,127,139-141,148,158-173,178-180,185-187
+src/types.ts
+  h_620afb38050b2a 12
+test/anthropic-transport.test.ts
+  h_620afb38050b2a 3,5-6,14-40,42-78,80-115
+test/auth.test.ts
+  h_620afb38050b2a 1-121
+test/config.test.ts
+  h_620afb38050b2a 23,28
+test/extension.test.ts
+  h_620afb38050b2a 2,26,28-31,58-66,73-74,77-82,85,87
+test/host-lifecycle.test.ts
+  h_620afb38050b2a 30-32,36-39,49-54,59,63-65,87-89
+test/mantle-stream.e2e.test.ts
+  h_620afb38050b2a 2-5,7,13,20,29-68,74,76,79-84,86
+test/real-aws.smoke.test.ts
+  h_620afb38050b2a 2,6,11,13-14,16-24,49-53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ab951b1da0835c3a20784ff1d8029b1eda191ebf",
+  "prompts": {},
+  "humans": {
+    "h_620afb38050b2a": {
+      "author": "Cesar Arze <cesar.arze@gmail.com>"
+    }
+  }
+}
