@@ -1,0 +1,14 @@
+README.md
+  h_620afb38050b2a 31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "70664374faaf802b3c2b407d89bf4ee193a7fe81",
+  "prompts": {},
+  "humans": {
+    "h_620afb38050b2a": {
+      "author": "Cesar Arze <cesar.arze@gmail.com>"
+    }
+  }
+}
